@@ -7,12 +7,12 @@ codigo_programador  = list(open('configuracao/codigo.txt'))
 arvore = ET.parse('configuracao/parsing.xml')
 root = arvore.getroot()
 
-block, vivos, alcan, regras_finais, fita, escopo, simbolos, estados, tabela_simbolos, fita_saida = [], [], [], [], [], [], [], [], [], []
-epTransicao, gramatica, simbolo_redu, tabela = {}, {}, {}, {}
-
 def main():
+    block, vivos, alcan, regras_finais, fita, escopo, simbolos, estados, tabela_simbolos, fita_saida = [], [], [], [], [], [], [], [], [], []
+    epTransicao, gramatica, simbolo_redu, tabela = {}, {}, {}, {}
     gramatica['S'] = []
     estadoinicial = ''
+    
     for x in arquivo_tokens: #le o arquivo_tokens
         if '<S> ::=' in x:
             estadoinicial = x
