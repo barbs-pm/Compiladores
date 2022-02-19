@@ -1,16 +1,4 @@
-import xml.etree.ElementTree as ET
-from geracaoAutomato import *
-
-arquivo_tokens = list(open('configuracao/tks.txt'))
-codigo_programador  = list(open('configuracao/codigo.txt'))
-arvore = ET.parse('configuracao/parsing.xml')
-root = arvore.getroot()
-
-block, vivos, alcan, regras_finais, fita, escopo, simbolos, estados, tabela_simbolos, fita_saida = [], [], [], [], [], [], [], [], [], []
-epTransicao, gramatica, simbolo_redu, tabela = {}, {}, {}, {}
-
-
-def analisador_lexico():
+def analisador_lexico(codigo_programador, regras_finais, fita_saida, simbolos, tabela_simbolos, tabela):
     separadores = [' ', '\n', '\t', '+', '-', '{', '}', '#', ';']
     espacadores = [' ', '\n', '\t']
     operadores  = ['+', '-', '#', ';']
@@ -75,11 +63,10 @@ def analisador_lexico():
     if erro:
         exit()  #finaliza caso exista erro
 
-    print("Final etapa lexica")
+    print("Fita de saída da etapa léxica: ")
     print(fita_saida)
 
-
-def mapeamento(symbols):
+def mapeamento(symbols, simbolo_redu, fita_saida, fita, tabela_simbolos):
     symbols_indexes = {}    #é feito um reverso com o index x name
     for index, symbol in enumerate(symbols):
         symbols_indexes[symbol['Name']] = str(index)
@@ -101,8 +88,7 @@ def mapeamento(symbols):
         elif line['State'] == '$':
             line['State'] = 'EOF'
 
-
-def analisador_sintatico(): #aqui é lido o arquivo_tokens xml pelas suas tags, nome, type, etc
+def analisador_sintatico(root, simbolo_redu, fita, tabela_simbolos, escopo, block, fita_saida): #aqui é lido o arquivo_tokens xml pelas suas tags, nome, type, etc
     redux_symbol, symbols, productions, lalr_table, pilha  = [], [], [], [], ['0']
 
     def charge():
@@ -177,13 +163,12 @@ def analisador_sintatico(): #aqui é lido o arquivo_tokens xml pelas suas tags, 
                 token['Scope'] = escopo.pop(0)  # adiciona o escopo em que ela está
 
     charge()
-    mapeamento(symbols)
+    mapeamento(symbols, simbolo_redu, fita_saida, fita, tabela_simbolos)
     parser()
     catch_statements()
     complete_ts()
 
-
-def analisador_semantico():
+def analisador_semantico(block, tabela_simbolos):
     var_scope = {}
     error = False
 
@@ -215,7 +200,7 @@ def analisador_semantico():
     if error:
         exit()
 
-def codigo_intermediario():
+def codigo_intermediario(tabela_simbolos):
     ts_code = []
     int_code = []
 
@@ -285,33 +270,3 @@ def codigo_intermediario():
     encontra_operacoes()
     gera_codigo()
     exporta_codigo()
-
-
-def main():
-    gramatica['S'] = []
-    estadoinicial = ''
-    for x in arquivo_tokens: #le o arquivo_tokens
-        if '<S> ::=' in x:
-            estadoinicial = x
-        if '::=' in x:
-            tratar_gramatica(x, estadoinicial, simbolos, gramatica) #funcao que trata a gramatica
-        else:
-            tratar_token(x, simbolos, gramatica, regras_finais) #trata os tokens e salva na regra da gramatica
-    criar_automato_finitos(gramatica, tabela, estados, simbolos, regras_finais)  
-    eliminar_et(tabela, regras_finais)
-    determizinar(tabela, estados, simbolos, regras_finais)
-    buscar_alcansaveis('S', alcan, tabela)
-    eliminar_inalcansaveis(tabela, alcan)
-    estado_erro(tabela, simbolos)
-    vivos.extend(regras_finais)    #adiciona as regras regras_finais ao vivos
-    buscar_vivos(tabela, vivos)
-    eliminar_mortos(tabela, vivos)
-    criar_csv(tabela, regras_finais)
-    analisador_lexico()
-    analisador_sintatico()
-    analisador_semantico()
-    codigo_intermediario()
-    print('Compilado com sucesso!')
-
-print('\n')
-main()
